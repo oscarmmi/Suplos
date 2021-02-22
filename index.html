@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <link href="http://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link type="text/css" rel="stylesheet" href="css/materialize.min.css"  media="screen,projection"/>
+  <link type="text/css" rel="stylesheet" href="css/alertify.min.css"  media="screen,projection"/>
+  <link type="text/css" rel="stylesheet" href="css/customColors.css"  media="screen,projection"/>
+  <link type="text/css" rel="stylesheet" href="css/ion.rangeSlider.css"  media="screen,projection"/>
+  <link type="text/css" rel="stylesheet" href="css/ion.rangeSlider.skinFlat.css"  media="screen,projection"/>
+  <link type="text/css" rel="stylesheet" href="css/index.css"  media="screen,projection"/>
+  <link rel="stylesheet" href="//code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Formulario</title>
+</head>
+
+<body>
+  <!--<video src="img/video.mp4" id="vidFondo"></video>-->
+
+  <div class="contenedor">
+    <div class="card rowTitulo">
+      <h1>Bienes Intelcost</h1>
+    </div>
+    <div class="colFiltros">
+      <form action="#" method="post" id="formulario">
+        <div class="filtrosContenido">
+          <div class="tituloFiltros">
+            <h5>Filtros</h5>
+          </div>
+          <div class="filtroCiudad input-field">
+            <p><label for="selectCiudad">Ciudad:</label><br></p>
+            <select name="ciudad" id="selectCiudad">
+              <option value="" selected>Elige una ciudad</option>
+            </select>
+          </div>
+          <div class="filtroTipo input-field">
+            <p><label for="selecTipo">Tipo:</label></p>
+            <br>
+            <select name="tipo" id="selectTipo">
+              <option value="">Elige un tipo</option>
+            </select>
+          </div>
+          <div class="filtroPrecio">
+            <label for="rangoPrecio">Precio:</label>
+            <input type="text" id="rangoPrecio" name="precio" value="" />
+          </div>
+          <div class="botonField">
+            <input class="btn white" value="Buscar" id="btnSearch">
+          </div>
+        </div>
+      </form>
+    </div>
+    <div id="tabs" style="width: 75%;">
+      <ul>
+        <li><a id="btnTab-1" href="#tabs-1">Bienes disponibles</a></li>
+        <li><a  id="btnTab-2" href="#tabs-2">Mis bienes</a></li>
+        <li><a id="btnTab-3" href="#tabs-3">Reportes</a></li>
+      </ul>
+      <div id="tabs-1">
+        <div class="row" id="divResultadosBusqueda">
+          
+        </div>
+      </div>
+      
+      <div id="tabs-2" >
+        <div class="row" id="divResultadosBusquedaGuardados">
+          
+        </div>
+      </div>
+      <div id="tabs-3" >
+        <div class="row" id="divExportarResultados">
+          <div class="filtroCiudad input-field">
+            <p><label for="selectCiudadExportar">Ciudad:</label><br></p>
+            <select name="ciudad" id="selectCiudadExportar">
+              <option value="" selected>Elige una ciudad</option>
+            </select>
+          </div>
+          <div class="filtroTipoExportar input-field">
+            <p><label for="selecTipoExportar">Tipo:</label><br></p>
+            <select name="tipo" id="selectTipoExportar">
+              <option value="">Elige un tipo</option>
+            </select>
+          </div>
+          <br>
+          <div class="botonField">
+            <a class="waves-effect waves-light btn" style="color:white;" id="btnExportar">Exportar</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    
+    <script type="text/javascript" src="js/ion.rangeSlider.min.js"></script>
+    <script type="text/javascript" src="js/materialize.min.js"></script>
+    <script type="text/javascript" src="js/alertify.min.js"></script>
+    <script type="text/javascript" src="js/index.js"></script>
+    <script type="text/javascript" src="js/buscador.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script type="text/javascript">
+      // ACTIONS 
+
+      var SAVE_GOODS=1;
+      var SEARCH_SAVED_GOODS=2;
+      var DELETE_SAVED_GOODS=3;
+      var EXPORT_DATA=4;
+
+      var datosGenerales=[];
+      var indexedData=[];
+      var cities=[];
+      var types=[];
+      var minValueInit=100000;
+      var maxValueInit=0;
+      $( document ).ready(function() {
+          $( "#tabs" ).tabs();
+          searchSavedGoods(1);
+          $("#btnSearch").click(searchingGoods);
+          $("#btnTab-2").click(searchSavedGoods);
+          $("#btnExportar").click(exportData);
+      });
+
+      function exportData(){
+        let city=parseInt($("#selectCiudadExportar").val());
+        let cityName="";
+        if(!isNaN(city)){
+          cityName=cities[city];
+        }
+        let type=parseInt($("#selectTipoExportar").val());
+        let typeName="";
+        if(!isNaN(type)){
+          typeName=types[type];
+        }
+        $.ajax({
+          url: 'acciones.php',
+          data: {
+              accion: EXPORT_DATA, 
+              city:cityName,
+              type:typeName
+          },
+          type: 'POST',
+          dataType: 'json',
+          success: function (respuesta) {
+            if(respuesta.ruta){
+              alertify.success("- Datos exportados correctamente");
+              window.open(respuesta.ruta, '_blank');
+              return;
+            }
+            alertify.error("- No hay datos para generar un reporte");
+          }
+        });
+      }
+
+      function searchSavedGoods(beginning){
+        $.ajax({
+          url: 'acciones.php',
+          data: {
+              accion: SEARCH_SAVED_GOODS
+          },
+          type: 'POST',
+          dataType: 'json',
+          success: function (respuesta) {
+            if(beginning===1){
+              $.getJSON("data-1.json", function(json) {
+                  cities=loadSelect('selectCiudad', 'Ciudad', json);
+                  types=loadSelect('selectTipo', 'Tipo', json);
+                  datosGenerales=procesarDatos(json, respuesta.datos,  types, cities);
+                  loadCardsofGoods(datosGenerales);
+                  $("#rangoPrecio").data("ionRangeSlider").update({
+                      from: minValueInit,
+                      to: maxValueInit
+                  });
+              });
+            }else{
+              $("#divResultadosBusquedaGuardados").html('');
+              if(parseInt(respuesta.datos.length)){
+                loadCardsofGoods(respuesta.datos, 1);
+                return;
+              }
+              alertify.success("- No hay bienes guardados actualmente");
+            }
+          }
+        });
+      }
+
+      function searchingGoods(){
+        $("#btnTab-1").click();
+        let selectCiudad=parseInt($("#selectCiudad").val());
+        let selectTipo=parseInt($("#selectTipo").val());
+        let priceRange=$("#rangoPrecio").val().split(";");
+        let minValue=parseInt(priceRange[0]);
+        let maxValue=parseInt(priceRange[1]);
+        let filteredData=[];
+        for (const a in datosGenerales) {
+          if(!isNaN(selectCiudad) && selectCiudad!==datosGenerales[a]['idcity']){
+            continue;
+          }
+          if(!isNaN(selectTipo) && selectTipo!==datosGenerales[a]['idtype']){
+            continue;
+          }
+          if(!(datosGenerales[a]['intprice']>=minValue && datosGenerales[a]['intprice']<=maxValue)){
+            continue;
+          }
+          filteredData.push(datosGenerales[a]);
+        }
+        loadCardsofGoods(filteredData);
+        alertify.success("- Busqueda realizada exitosamente");
+      }
+
+      function procesarDatos(json, datos, types, cities){
+        console.info(datos);
+        let aSaved=[];
+        for (const a in datos) {
+          aSaved.push(parseInt(datos[a]['Id']));
+        }
+        let items=[];
+        for (const a in json) {
+          let item=json[a];
+          indexedData.push(parseInt(item["Id"]));
+          item.guardado=0;
+          if(aSaved.indexOf(parseInt(item["Id"]))>-1){
+            item.guardado=1;
+          }
+          item.idcity=parseInt(cities.indexOf(item['Ciudad']));
+          item.idtype=parseInt(types.indexOf(item['Tipo']));
+          item.intprice=parseInt(item["Precio"].replace("$", "").replace(",", ""));
+          if(item.intprice<minValueInit){
+            minValueInit=item.intprice;
+          }
+          if(item.intprice>maxValueInit){
+            maxValueInit=item.intprice;
+          }
+          items.push(item);
+        }
+        return items;
+      }
+
+      function loadCardsofGoods(datos, savedGoods=0){
+        var containerData={
+          id:"#divResultadosBusqueda",
+          saved:0,
+          cardid:'card_',
+          actioncardid:'cardAction_'
+        };
+        if(savedGoods){
+          containerData={
+            id:"#divResultadosBusquedaGuardados",
+            saved:1,
+            cardid:'savedcard_',
+            actioncardid:'savedCardAction_'
+          };
+        }
+        $(containerData.id).html('');
+        let tarjetas='';
+        for (const a in datos) {
+          let savedId=datos[a]['Id'];
+          let notSavedGood='<a class="waves-effect waves-light btn" style="color:white;" onclick="saveGood('+datos[a]['Id']+');">GUARDAR</a>';
+          if(!containerData.saved && parseInt(datos[a]['guardado'])){
+            notSavedGood='<a class="waves-effect light-blue btn" style="color:white;" onclick="openSavedGoodTab();">GUARDADO</a>';
+          }
+          if(containerData.saved){
+            savedId=datos[a]['savedgood_id'];
+            notSavedGood='<a class="waves-effect red btn" style="color:white;" onclick="deleteSavedGood('+datos[a]['savedgood_id']+');">ELIMINAR</a>';
+          }
+          tarjetas+='<div class="col s12 m6 l4 xl3">'+
+            '<div class="card" id="'+containerData.cardid+datos[a]['Id']+'">'+
+              '<div class="card-image">'+
+                '<img src="http://localhost/suplosBackEnd-master/img/home.jpg">'+
+                '</div>'+
+                '<div class="card-content">'+
+                  '<span class="card-title">'+datos[a]['Ciudad']+'</span>'+
+                  '<p class="blue-text" style="font-weight:bolder!important;">'+datos[a]['Tipo']+'</p>'+
+                  '<p><span style="font-weight:bolder!important;">Dirección:</span></p>'+
+                  '<p>'+datos[a]['Direccion']+'</p>'+
+                  '<p><span style="font-weight:bolder!important;">Código Postal:</span>'+datos[a]['Codigo_Postal']+'</p>'+
+                  '<p><span style="font-weight:bolder!important;cursor:help!important;" title="Teléfono">Tel:</span>'+datos[a]['Telefono']+'</p>'+
+                  '<h5 style="text-align:right!important;font-weight:bolder!important;" class="green-text">'+datos[a]['Precio']+'</h5>'+                  
+                '</div>'+
+                '<div class="card-action" id="'+containerData.actioncardid+savedId+'">'+
+                  notSavedGood+
+                '</div>'+
+              '</div>'+
+            '</div>'+
+          '</div>';
+        }
+        $(containerData.id).html(tarjetas);
+      }
+
+      function deleteSavedGood(savedgood_id){
+        alertify.confirm('Esta seguro de borrar este bien de sus bienes guardados? ', 
+          function(){ 
+            $.ajax({
+              url: 'acciones.php',
+              data: {
+                  accion: DELETE_SAVED_GOODS, 
+                  savedgood_id: savedgood_id
+              },
+              type: 'POST',
+              dataType: 'json',
+              success: function (respuesta) {
+                  if(parseInt(respuesta.eliminado)){
+                    alertify.success("- Bien borrado exitosamente");
+                    $("#savedcard_"+respuesta.eliminado).remove();
+                    $("#cardAction_"+respuesta.eliminado).html('<a class="waves-effect waves-light btn" style="color:white;" onclick="saveGood('+respuesta.eliminado+');">GUARDAR</a>');
+                  }
+              }
+            });
+          }, 
+          function(){ 
+            
+        });
+      }
+
+      function openSavedGoodTab(){
+        $("#btnTab-2").click();
+      }
+
+      function saveGood(Id){
+        if(!Id){
+          return;
+        }
+        let actualIndex=indexedData.indexOf(parseInt(Id));
+        let oData=datosGenerales[actualIndex];
+        $.ajax({
+          url: 'acciones.php',
+          data: {
+              accion: SAVE_GOODS, 
+              datos: JSON.stringify(oData)
+          },
+          type: 'POST',
+          dataType: 'json',
+          success: function (respuesta) {
+              if(parseInt(respuesta.guardado)){
+                alertify.success("- Bien guardado exitosamente");
+                oData.guardado=1;
+                datosGenerales[actualIndex]=oData;
+                $("#cardAction_"+oData['Id']).html('<a class="waves-effect light-blue btn" style="color:white;" onclick="openSavedGoodTab();">GUARDADO</a>');
+              }
+          }
+        });
+      }
+
+      function loadSelect(select, column, datos){
+        let registers=[];
+        for (const a in datos) {
+          if(parseInt(registers.indexOf(datos[a][column]))===-1){
+            registers.push(datos[a][column]);
+          }
+        }
+        let htmlSelect=$("#"+select).html();
+        for (const b in registers) {
+          htmlSelect+='<option value="'+b+'" >'+registers[b]+'</option>'
+        }
+        $("#"+select).html(htmlSelect);
+        $("#"+select+"Exportar").html(htmlSelect);
+        return registers;
+      }
+    </script>
+  </body>
+  </html>
