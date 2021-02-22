@@ -16,3 +16,6 @@ Instructivo para compilar el proyecto
 en esa funcion se pone el usuario y la contraseña y ya deberia funcionar.
 
 4.Ingresar al proyecto
+
+Dejo un enlace para ingresar a la prueba ya en subdominio de mi host
+http://suplos.comercializadoraderepuestosyusados.com/
